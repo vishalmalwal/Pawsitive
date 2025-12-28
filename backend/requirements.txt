@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+supabase
+openai
+python-dotenv
+python-jose[cryptography]
+pydantic
