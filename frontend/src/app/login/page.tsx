@@ -2,8 +2,8 @@
 
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useAuth } from "@/app/layout";  // Our auth context from layout.tsx
+import { useState, useEffect } from "react";
+import { useAuth } from "@/app/layout";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +12,14 @@ export default function LoginPage() {
   const [isSignup, setIsSignup] = useState(true);
   const router = useRouter();
   const { user } = useAuth();
+
+  // Safe redirect after login
+  useEffect(() => {
+    if (user?.email_confirmed_at) {
+      const type = user.user_metadata?.user_type || "adopter";
+      router.push(type === "shelter" ? "/shelter" : "/adopter");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,21 +42,12 @@ export default function LoginPage() {
       });
       if (error) {
         alert(error.message);
-      } else if (data.user?.email_confirmed_at) {
-        const type = data.user.user_metadata.user_type || "adopter";
-        router.push(type === "shelter" ? "/shelter" : "/adopter");
-      } else {
+      } else if (!data.user?.email_confirmed_at) {
         alert("Please confirm your email first!");
       }
+      // Redirect happens automatically via useEffect above
     }
   };
-
-  // Auto-redirect if already logged in and verified
-  if (user?.email_confirmed_at) {
-    const type = user.user_metadata?.user_type || "adopter";
-    router.push(type === "shelter" ? "/shelter" : "/adopter");
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
@@ -76,7 +75,7 @@ export default function LoginPage() {
           />
           <select
             value={userType}
-            onChange={(e) => setUserType(e.target.value as "adopter" | "shelter")}
+            onChange={(e) => setUserType(e.target.value as any)}
             className="w-full p-4 border rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="adopter">I'm an Adopter</option>
